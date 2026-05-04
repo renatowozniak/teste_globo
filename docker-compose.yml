@@ -1,13 +1,19 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:alpine
+    restart: always
+
   app-python:
     build: ./app-python
-    restart: always
+    depends_on:
+      - redis
 
   app-node:
     build: ./app-node
-    restart: always
+    depends_on:
+      - redis
 
   nginx:
     image: nginx:latest
@@ -16,15 +22,9 @@ services:
       - cache_data:/var/cache/nginx
     ports:
       - "80:80"
-      - "8080:8080"
     depends_on:
       - app-python
       - app-node
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   prometheus:
     image: prom/prometheus:latest
@@ -32,13 +32,6 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
 
 volumes:
   cache_data:
